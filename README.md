@@ -4,7 +4,7 @@
 コントローラーアプリ側のプログラム : https://github.com/Dai1678/ScriptRobotController   
 
 # 開発中で使用する用語
-SPP  
+追記してね  
 
 # 実装内容   
 ## A実装   

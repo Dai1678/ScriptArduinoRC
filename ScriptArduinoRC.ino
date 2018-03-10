@@ -1,4 +1,7 @@
 #include <SoftwareSerial.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 SoftwareSerial BT(10, 11);
 
@@ -31,6 +34,7 @@ void setup() {
  * Speed : 動作命令のモータパワー値
  * 
  * 例: 102100 (1命令分)
+ * 
  * 1桁目 -> imageId
  * 2,3桁目 -> Time
  * 4,5,6桁目 -> Speed
@@ -39,26 +43,33 @@ void setup() {
 -------------------------------------------------*/
 
 void loop() {
-  int btDataSize = BT.available();
-  if (btDataSize > 0) {
+  int btDataSize = BT.available();  //読み込み可能なバイト数(文字数)を取得(image一つなら6桁)
+  
+  if (btDataSize > 0) { 
     char btData[btDataSize];
-
-    for(int i=0; i<btDataSize; i++){
-      btData[i] = BT.read();
-      Serial.print(btData[i]);
+    int i;
+    
+    for(i=0; i<=btDataSize; i++){
+      //TODO 1文字ずつreadした文字を6桁でひとまとめにしたい
+      btData[i] = BT.read();  //read()は1文字づつしか読めない
+      Serial.print(String(btData[i])+"\n");
+      //normalization(String(btData[i]));
+      
     }
     
-    //normalization(btData);
   }
 
 }
 
+//未検証
 void normalization(String select) {
   int i, j;
   int scriptLength = select.length() / 3;
   String imageCode[scriptLength];
   int timeNumCode[scriptLength];
   int speedNumCode[scriptLength];
+
+  Serial.print(select);
 
   //imageIdを表す数字の取り出し(1桁)
   for (i = 0, j = 0; i < select.length() - 6; i += 6, j++) {
@@ -156,4 +167,5 @@ void motorControl(String image, int timeNum, int speedNum) {
   }
 
 }
+
 

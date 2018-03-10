@@ -1,7 +1,6 @@
 #include <SoftwareSerial.h>
+#include "Arduino.h"
 #include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 
 SoftwareSerial BT(10, 11);
 
@@ -43,59 +42,42 @@ void setup() {
 -------------------------------------------------*/
 
 void loop() {
-  int btDataSize = BT.available();  //読み込み可能なバイト数(文字数)を取得(image一つなら6桁)
-  
-  if (btDataSize > 0) { 
+  if (BT.available() > 0) { 
+    int btDataSize = BT.available();  //読み込み可能なバイト数(文字数)を取得(image一つなら6桁)
     char btData[btDataSize];
     int i;
-    
-    for(i=0; i<=btDataSize; i++){
-      //TODO 1文字ずつreadした文字を6桁でひとまとめにしたい
-      btData[i] = BT.read();  //read()は1文字づつしか読めない
-      Serial.print(String(btData[i])+"\n");
-      //normalization(String(btData[i]));
-      
-    }
-    
+
+    String data = BT.readStringUntil(0);
+    //Serial.print(data+"\n");
+    checkData(data);
   }
 
 }
 
-//未検証
-void normalization(String select) {
-  int i, j;
-  int scriptLength = select.length() / 3;
-  String imageCode[scriptLength];
-  int timeNumCode[scriptLength];
-  int speedNumCode[scriptLength];
+void checkData(String data){
+  //TODO 複数命令対応
+  
+  //imageIdの取り出し(ひと桁)
+  String imageCode = data.substring(0, 1);
+  //Serial.print(imageCode+"\n");
 
-  Serial.print(select);
+  //Timeの取り出し(2桁)
+  int timeCode = data.substring(1, 3).toInt();
+  //Serial.print(String(timeCode)+"\n");
 
-  //imageIdを表す数字の取り出し(1桁)
-  for (i = 0, j = 0; i < select.length() - 6; i += 6, j++) {
-    imageCode[j] = select.charAt(i);
-  }
+  //speedの取り出し(3桁)
+  int speedCode = data.substring(3, 6).toInt();
+  //Serial.print(String(speedCode)+"\n");
 
-  //Timeを表す数字の取り出し(2桁)
-  for (i = 1, j = 0; i < select.length() - 5; i += 6, j++) {
-    String timeStrCode = select.substring(i, i + 2);
-    timeNumCode[j] = timeStrCode.toInt();
-  }
+  delay(1000);
 
-  //speedを表す数字の取り出し(3桁)
-  for (i = 3, j = 0; i < select.length() - 3; i += 6, j++) {
-    String speedStrCode = select.substring(i, i + 3);
-    speedNumCode[j] = speedStrCode.toInt();
-  }
-
-  //
-  for (int i = 0; i < scriptLength; i++) {
-    motorControl(imageCode[i], timeNumCode[i], speedNumCode[i]);
-  }
-
+  motorControl(imageCode, timeCode, speedCode);
+  
 }
 
 void motorControl(String image, int timeNum, int speedNum) {
+
+  timeNum = timeNum * 1000;
 
   //前進
   if (image.equals("1")) {
@@ -110,9 +92,9 @@ void motorControl(String image, int timeNum, int speedNum) {
     //出力調整
     analogWrite(3, speedNum);
     analogWrite(5, speedNum);
-
-    delay(timeNum);
-
+    
+    delay(timeNum); //TODO 指定秒数で止まらずにずっと回り続けている
+    Serial.print(String(timeNum)+"\n");
   }
 
   //後退
@@ -162,6 +144,19 @@ void motorControl(String image, int timeNum, int speedNum) {
     //出力調整
     analogWrite(3, speedNum);
     analogWrite(5, speedNum);
+
+    delay(timeNum);
+  }
+
+  //停止
+  else if(image.equals("5")){
+    //左タイヤ
+    digitalWrite(6, LOW);
+    digitalWrite(7, LOW);
+
+    //右タイヤ
+    digitalWrite(8, LOW);
+    digitalWrite(9, LOW);
 
     delay(timeNum);
   }

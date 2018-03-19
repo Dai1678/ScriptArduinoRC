@@ -32,7 +32,7 @@ void setup() {
  * Time : 動作命令の実行時間
  * Speed : 動作命令のモータパワー値
  * 
- * 例: 102100 (1命令分)
+ * 例: 102100 (1命令分) (6byte)
  * 
  * 1桁目 -> imageId
  * 2,3桁目 -> Time
@@ -42,22 +42,21 @@ void setup() {
 -------------------------------------------------*/
 
 void loop() {
+  //Serial.available()で取得できるのは最大64byteなので、現状は一度に10命令分までしか実行できない
   if (BT.available() > 0) { 
-    int btDataSize = BT.available();  //読み込み可能なバイト数(文字数)を取得(image一つなら6桁)
-    char btData[btDataSize];
-    int i;
 
-    String data = BT.readStringUntil(0);
-    //Serial.print(data+"\n");
+    String data = BT.readStringUntil('\0'); 
+    Serial.print(data+"\n");
     checkData(data);
+
+    sleepMotor();
   }
 
 }
 
 void checkData(String data){
-  //TODO 複数命令対応
   
-  //imageIdの取り出し(ひと桁)
+  //imageIdの取り出し(1桁)
   String imageCode = data.substring(0, 1);
   //Serial.print(imageCode+"\n");
 
@@ -69,15 +68,14 @@ void checkData(String data){
   int speedCode = data.substring(3, 6).toInt();
   //Serial.print(String(speedCode)+"\n");
 
-  delay(1000);
-
   motorControl(imageCode, timeCode, speedCode);
   
 }
 
+//TODO モーター出力値の調整
 void motorControl(String image, int timeNum, int speedNum) {
 
-  timeNum = timeNum * 1000;
+  timeNum = timeNum * 1000; //単位msに変換
 
   //前進
   if (image.equals("1")) {
@@ -93,8 +91,8 @@ void motorControl(String image, int timeNum, int speedNum) {
     analogWrite(3, speedNum);
     analogWrite(5, speedNum);
     
-    delay(timeNum); //TODO 指定秒数で止まらずにずっと回り続けている
-    Serial.print(String(timeNum)+"\n");
+    delay(timeNum);
+    
   }
 
   //後退
@@ -161,6 +159,15 @@ void motorControl(String image, int timeNum, int speedNum) {
     delay(timeNum);
   }
 
+}
+
+void sleepMotor(){
+  digitalWrite(6, LOW);
+  digitalWrite(7, LOW);
+  digitalWrite(8, LOW);
+  digitalWrite(9, LOW);
+
+  delay(100);
 }
 
 

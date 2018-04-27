@@ -54,42 +54,47 @@ void setup() {
 
 void loop() {
   //Serial.available()で取得できるのは最大64byteなので、現状は一度に10命令分までしか実行できない
-  if (BT.available() > 0) {
-    String data = BT.readStringUntil('\0');
-    if (data.substring(0, 2) == "ff") {
-      int headerData = data.substring(2, data.length()).toInt();
-      String datas[headerData];
-      //Serial.print("header" + String(headerData) + "\n");
-      for (int i = 0; i < headerData; i++ ) {
-        datas[i] = BT.readStringUntil('\0');
-      }
-      Serial.print(String(datas[1])+"\n");
-      // datas が行の中身
-      //headerDataが行数
+  if(BT.available() == 0){
+    return;
+}
+  String data = BT.readStringUntil('\0');
+  if (data.substring(0, 2) == "ff") {
+    int lineNum = data.substring(2, data.length()).toInt();
+    String BTCommandStr[lineNum];
+    //Serial.print("header" + String(lineNum) + "\n");
+    for (int i = 0; i < lineNum; i++ ) {
+      BTCommandStr[i] = BT.readStringUntil('\0');
+    }
+    //Serial.print(String(BTCommandStr[1])+"\n");
+    // BTCommandStr が行の中身
+    //lineNumが行数
       
-      struct motorCommand commands[100];
-      int j = 0;
-      for (int i = 0; i < headerData; i++) {
-        struct motorCommand command[6];
-        String str = datas[i];
-        checkData(str,command);
-        Serial.print(String(command[0].orderId)+"\n");
-        //Serial.print(String(datas[i])+"\n");
+    struct motorCommand commands[100];
+    int j = 0;
+    for (int i = 0; i < lineNum; i++) {
+      struct motorCommand tmpCommand[6];
+      String str = BTCommandStr[i];
+      checkData(str,tmpCommand);
+        
+      Serial.print(String(tmpCommand[0].orderId)+"\n");
+      //Serial.print(String(BTCommandStr[i])+"\n");
 
-          commands[j] = command[0];
-          commands[j+1] = command[1];
-          commands[j+2] = command[2];
-          commands[j+3] = command[3];
-          commands[j+4] = command[4];
-          commands[j+5] = command[5];
+        // TODO 値渡し用に時間稼ぐと動くのでは？ 
+        delay(100);
+        commands[j] = tmpCommand[0];
+        commands[j+1] = tmpCommand[1];
+        commands[j+2] = tmpCommand[2];
+        commands[j+3] = tmpCommand[3];
+        commands[j+4] = tmpCommand[4];
+        commands[j+5] = tmpCommand[5];
+        j = j + 6;
+     }
 
-          j = j + 6;
-      }
-      for (int i = 0; i < sizeof(commands); i++) {
-        //Serial.print(String(commands[i].orderId)+"\n");
-        motorControl(commands[i]);
-      }
-      sleepMotor();
+    for (int i = 0; i < sizeof(commands); i++) {
+      //Serial.print(String(commands[i].orderId)+"\n");
+      motorControl(commands[i]);
+    }
+    sleepMotor();
 
       //シングル
     } else {
@@ -100,7 +105,6 @@ void loop() {
       }
       sleepMotor();
     }
-  }
 }
 
 void checkData(String data, struct motorCommand command[6]) {
@@ -108,21 +112,18 @@ void checkData(String data, struct motorCommand command[6]) {
   int roopNum = copyData.length() / 9;
   for (int i = 0; i < roopNum; i++) {
     //Idの取り出し(1桁)
-    String imageCode = copyData.substring(0, 1);
-    //Serial.print(imageCode+"\n");
+    String orderId = copyData.substring(0, 1);
 
     //Timeの取り出し(2桁)
     int timeCode = copyData.substring(1, 3).toInt();
-    //Serial.print(String(timeCode)+"\n");
 
     //speedの取り出し 右回転(3桁)
     int rightSpeedCode = copyData.substring(3, 6).toInt();
-    //Serial.print(String(rightSpeedCode)+"\n");
 
     //speedの取り出し 左回転(3桁)
     int leftSpeedCode = copyData.substring(6, 9).toInt();
 
-    command[i].orderId = imageCode;
+    command[i].orderId = orderId;
     command[i].timeNum = timeCode;
     command[i].rightSpeed = rightSpeedCode;
     command[i].leftSpeed = leftSpeedCode;
@@ -236,5 +237,3 @@ void sleepMotor() {
 
   delay(100);
 }
-
-

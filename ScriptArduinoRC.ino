@@ -5,23 +5,32 @@
 SoftwareSerial BT(10, 11);
 
 /*
+  ピン番号 3 : モータ出力 左タイヤ
+  ピン番号 5 : モータ出力 右タイヤ
   ピン番号 6 : HIGH 左タイヤ前進
   ピン番号 7 : HIGH 左タイヤ後進
   ピン番号 8 : HIGH 右タイヤ前進
   ピン番号 9 : HIGH 右タイヤ後進
 */
 
+#define MOTOR_POWER_LEFT 3
+#define MOTOR_POWER_RIGHT 5
+#define MOTOR_FRONT_LEFT 6
+#define MOTOR_BACK_LEFT 7
+#define MOTOR_FRONT_RIGHT 8
+#define MOTOR_BACK_RIGHT 9
+
 void setup() {
   BT.begin(9600);
   Serial.begin(38400);
 
   //左タイヤ
-  pinMode(6, OUTPUT);
-  pinMode(7, OUTPUT);
+  pinMode(MOTOR_FRONT_LEFT, OUTPUT);
+  pinMode(MOTOR_BACK_LEFT, OUTPUT);
 
   //右タイヤ
-  pinMode(8, OUTPUT);
-  pinMode(9, OUTPUT);
+  pinMode(MOTOR_FRONT_RIGHT, OUTPUT);
+  pinMode(MOTOR_BACK_RIGHT, OUTPUT);
 
 }
 
@@ -64,32 +73,36 @@ void checkData(String data){
   int timeCode = data.substring(1, 3).toInt();
   //Serial.print(String(timeCode)+"\n");
 
-  //speedの取り出し(3桁)
-  int speedCode = data.substring(3, 6).toInt();
-  //Serial.print(String(speedCode)+"\n");
+  //speedの取り出し 右回転(3桁)
+  int rightSpeedCode = data.substring(3, 6).toInt();
+  //Serial.print(String(rightSpeedCode)+"\n");
 
-  motorControl(imageCode, timeCode, speedCode);
+  //speedの取り出し 左回転(3桁)
+  int leftSpeedCode = data.substring(6, 9).toInt();
+  //Serial.print(String(leftSpeedCode)+"\n");
+
+  motorControl(imageCode, timeCode, rightSpeedCode, leftSpeedCode);
   
 }
 
 //TODO モーター出力値の調整
-void motorControl(String image, int timeNum, int speedNum) {
+void motorControl(String image, int timeNum, int rightSpeed, int leftSpeed) {
 
   timeNum = timeNum * 1000; //単位msに変換
 
   //前進
   if (image.equals("1")) {
     //左タイヤ
-    digitalWrite(6, HIGH);
-    digitalWrite(7, LOW);
+    digitalWrite(MOTOR_FRONT_LEFT, HIGH);
+    digitalWrite(MOTOR_BACK_LEFT, LOW);
 
     //右タイヤ
-    digitalWrite(8, HIGH);
-    digitalWrite(9, LOW);
+    digitalWrite(MOTOR_FRONT_RIGHT, HIGH);
+    digitalWrite(MOTOR_BACK_RIGHT, LOW);
 
     //出力調整
-    analogWrite(3, speedNum);
-    analogWrite(5, speedNum);
+    analogWrite(MOTOR_POWER_LEFT, leftSpeed);
+    analogWrite(MOTOR_POWER_RIGHT, rightSpeed);
     
     delay(timeNum);
     
@@ -98,16 +111,16 @@ void motorControl(String image, int timeNum, int speedNum) {
   //後退
   else if (image.equals("2")) {
     //左タイヤ
-    digitalWrite(6, LOW);
-    digitalWrite(7, HIGH);
+    digitalWrite(MOTOR_FRONT_LEFT, LOW);
+    digitalWrite(MOTOR_BACK_LEFT, HIGH);
 
     //右タイヤ
-    digitalWrite(8, LOW);
-    digitalWrite(9, HIGH);
+    digitalWrite(MOTOR_FRONT_RIGHT, LOW);
+    digitalWrite(MOTOR_BACK_RIGHT, HIGH);
 
     //出力調整
-    analogWrite(3, speedNum);
-    analogWrite(5, speedNum);
+    analogWrite(MOTOR_POWER_LEFT, leftSpeed);
+    analogWrite(MOTOR_POWER_RIGHT, rightSpeed);
 
     delay(timeNum);
   }
@@ -115,16 +128,16 @@ void motorControl(String image, int timeNum, int speedNum) {
   //左回転
   else if (image.equals("3")) {
     //左タイヤ
-    digitalWrite(6, LOW);
-    digitalWrite(7, HIGH);
+    digitalWrite(MOTOR_FRONT_LEFT, LOW);
+    digitalWrite(MOTOR_BACK_LEFT, HIGH);
 
     //右タイヤ
-    digitalWrite(8, HIGH);
-    digitalWrite(9, LOW);
+    digitalWrite(MOTOR_FRONT_RIGHT, HIGH);
+    digitalWrite(MOTOR_BACK_RIGHT, LOW);
 
     //出力調整
-    analogWrite(3, speedNum);
-    analogWrite(5, speedNum);
+    analogWrite(MOTOR_POWER_LEFT, leftSpeed);
+    analogWrite(MOTOR_POWER_RIGHT, rightSpeed);
 
     delay(timeNum);
   }
@@ -132,16 +145,16 @@ void motorControl(String image, int timeNum, int speedNum) {
   //右回転
   else if (image.equals("4")) {
     //左タイヤ
-    digitalWrite(6, HIGH);
-    digitalWrite(7, LOW);
+    digitalWrite(MOTOR_FRONT_LEFT, HIGH);
+    digitalWrite(MOTOR_BACK_LEFT, LOW);
 
     //右タイヤ
-    digitalWrite(8, LOW);
-    digitalWrite(9, HIGH);
+    digitalWrite(MOTOR_FRONT_RIGHT, LOW);
+    digitalWrite(MOTOR_BACK_RIGHT, HIGH);
 
     //出力調整
-    analogWrite(3, speedNum);
-    analogWrite(5, speedNum);
+    analogWrite(MOTOR_POWER_LEFT, leftSpeed);
+    analogWrite(MOTOR_POWER_RIGHT, rightSpeed);
 
     delay(timeNum);
   }
@@ -149,12 +162,12 @@ void motorControl(String image, int timeNum, int speedNum) {
   //停止
   else if(image.equals("5")){
     //左タイヤ
-    digitalWrite(6, LOW);
-    digitalWrite(7, LOW);
+    digitalWrite(MOTOR_FRONT_LEFT, LOW);
+    digitalWrite(MOTOR_BACK_LEFT, LOW);
 
     //右タイヤ
-    digitalWrite(8, LOW);
-    digitalWrite(9, LOW);
+    digitalWrite(MOTOR_FRONT_RIGHT, LOW);
+    digitalWrite(MOTOR_BACK_RIGHT, LOW);
 
     delay(timeNum);
   }
@@ -162,10 +175,10 @@ void motorControl(String image, int timeNum, int speedNum) {
 }
 
 void sleepMotor(){
-  digitalWrite(6, LOW);
-  digitalWrite(7, LOW);
-  digitalWrite(8, LOW);
-  digitalWrite(9, LOW);
+  digitalWrite(MOTOR_FRONT_LEFT, LOW);
+  digitalWrite(MOTOR_BACK_LEFT, LOW);
+  digitalWrite(MOTOR_FRONT_RIGHT, LOW);
+  digitalWrite(MOTOR_BACK_RIGHT, LOW);
 
   delay(100);
 }

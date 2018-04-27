@@ -1,5 +1,6 @@
 #include <SoftwareSerial.h>
 #include "Arduino.h"
+#include "motorCommand.h"
 #include <stdio.h>
 
 SoftwareSerial BT(10, 11);
@@ -20,6 +21,7 @@ SoftwareSerial BT(10, 11);
 #define MOTOR_FRONT_RIGHT 8
 #define MOTOR_BACK_RIGHT 9
 
+
 void setup() {
   BT.begin(9600);
   Serial.begin(38400);
@@ -35,58 +37,110 @@ void setup() {
 }
 
 /*-------------------------------------------------
- * コントローラーから送られてくるデータフォーマット
- * imageId : ラジコンに対する動作命令
- *    1 : 前進  2 : 後退  3 : 左回転  4 : 右回転
- * Time : 動作命令の実行時間
- * Speed : 動作命令のモータパワー値
- * 
- * 例: 102100 (1命令分) (6byte)
- * 
- * 1桁目 -> imageId
- * 2,3桁目 -> Time
- * 4,5,6桁目 -> Speed
- *
- * モータ値100で2秒間前進
--------------------------------------------------*/
+   コントローラーから送られてくるデータフォーマット
+   imageId : ラジコンに対する動作命令
+      1 : 前進  2 : 後退  3 : 左回転  4 : 右回転
+   Time : 動作命令の実行時間
+   Speed : 動作命令のモータパワー値
+
+   例: 102100 (1命令分) (6byte)
+
+   1桁目 -> imageId
+   2,3桁目 -> Time
+   4,5,6桁目 -> Speed
+
+   モータ値100で2秒間前進
+  -------------------------------------------------*/
 
 void loop() {
   //Serial.available()で取得できるのは最大64byteなので、現状は一度に10命令分までしか実行できない
-  if (BT.available() > 0) { 
+  if (BT.available() > 0) {
+    String data = BT.readStringUntil('\0');
+    if (data.substring(0, 2) == "ff") {
+      int headerData = data.substring(2, data.length()).toInt();
+      String datas[headerData];
+      //Serial.print("header" + String(headerData) + "\n");
+      for (int i = 0; i < headerData; i++ ) {
+        datas[i] = BT.readStringUntil('\0');
+      }
+      Serial.print(String(datas[1])+"\n");
+      // datas が行の中身
+      //headerDataが行数
+      
+      struct motorCommand commands[100];
+      int j = 0;
+      for (int i = 0; i < headerData; i++) {
+        struct motorCommand command[6];
+        String str = datas[i];
+        checkData(str,command);
+        Serial.print(String(command[0].orderId)+"\n");
+        //Serial.print(String(datas[i])+"\n");
 
-    String data = BT.readStringUntil('\0'); 
-    Serial.print(data+"\n");
-    checkData(data);
+          commands[j] = command[0];
+          commands[j+1] = command[1];
+          commands[j+2] = command[2];
+          commands[j+3] = command[3];
+          commands[j+4] = command[4];
+          commands[j+5] = command[5];
 
-    sleepMotor();
+          j = j + 6;
+      }
+      for (int i = 0; i < sizeof(commands); i++) {
+        //Serial.print(String(commands[i].orderId)+"\n");
+        motorControl(commands[i]);
+      }
+      sleepMotor();
+
+      //シングル
+    } else {
+      struct motorCommand command[6];
+      checkData(data,command);
+      for (int i = 0; i < sizeof(command); i++) {
+        motorControl(command[i]);  
+      }
+      sleepMotor();
+    }
   }
-
 }
 
-void checkData(String data){
-  
-  //imageIdの取り出し(1桁)
-  String imageCode = data.substring(0, 1);
-  //Serial.print(imageCode+"\n");
+void checkData(String data, struct motorCommand command[6]) {
+  String copyData = data;
+  int roopNum = copyData.length() / 9;
+  for (int i = 0; i < roopNum; i++) {
+    //Idの取り出し(1桁)
+    String imageCode = copyData.substring(0, 1);
+    //Serial.print(imageCode+"\n");
 
-  //Timeの取り出し(2桁)
-  int timeCode = data.substring(1, 3).toInt();
-  //Serial.print(String(timeCode)+"\n");
+    //Timeの取り出し(2桁)
+    int timeCode = copyData.substring(1, 3).toInt();
+    //Serial.print(String(timeCode)+"\n");
 
-  //speedの取り出し 右回転(3桁)
-  int rightSpeedCode = data.substring(3, 6).toInt();
-  //Serial.print(String(rightSpeedCode)+"\n");
+    //speedの取り出し 右回転(3桁)
+    int rightSpeedCode = copyData.substring(3, 6).toInt();
+    //Serial.print(String(rightSpeedCode)+"\n");
 
-  //speedの取り出し 左回転(3桁)
-  int leftSpeedCode = data.substring(6, 9).toInt();
-  //Serial.print(String(leftSpeedCode)+"\n");
+    //speedの取り出し 左回転(3桁)
+    int leftSpeedCode = copyData.substring(6, 9).toInt();
 
-  motorControl(imageCode, timeCode, rightSpeedCode, leftSpeedCode);
-  
+    command[i].orderId = imageCode;
+    command[i].timeNum = timeCode;
+    command[i].rightSpeed = rightSpeedCode;
+    command[i].leftSpeed = leftSpeedCode;
+    copyData = copyData.substring(9, copyData.length());
+
+    Serial.print(String(command[i].orderId)+"\n");
+  }
 }
 
 //TODO モーター出力値の調整
-void motorControl(String image, int timeNum, int rightSpeed, int leftSpeed) {
+void motorControl(struct motorCommand command) {
+
+  String image = command.orderId;
+  int timeNum = command.timeNum;
+  int leftSpeed = command.leftSpeed;
+  int rightSpeed = command.rightSpeed;
+
+  //Serial.print(image + "\n" + String(timeNum) + "\n" + String(leftSpeed) + "\n" + String(rightSpeed) + "\n");
 
   timeNum = timeNum * 1000; //単位msに変換
 
@@ -103,9 +157,9 @@ void motorControl(String image, int timeNum, int rightSpeed, int leftSpeed) {
     //出力調整
     analogWrite(MOTOR_POWER_LEFT, leftSpeed);
     analogWrite(MOTOR_POWER_RIGHT, rightSpeed);
-    
+
     delay(timeNum);
-    
+
   }
 
   //後退
@@ -160,7 +214,7 @@ void motorControl(String image, int timeNum, int rightSpeed, int leftSpeed) {
   }
 
   //停止
-  else if(image.equals("5")){
+  else if (image.equals("5")) {
     //左タイヤ
     digitalWrite(MOTOR_FRONT_LEFT, LOW);
     digitalWrite(MOTOR_BACK_LEFT, LOW);
@@ -174,7 +228,7 @@ void motorControl(String image, int timeNum, int rightSpeed, int leftSpeed) {
 
 }
 
-void sleepMotor(){
+void sleepMotor() {
   digitalWrite(MOTOR_FRONT_LEFT, LOW);
   digitalWrite(MOTOR_BACK_LEFT, LOW);
   digitalWrite(MOTOR_FRONT_RIGHT, LOW);

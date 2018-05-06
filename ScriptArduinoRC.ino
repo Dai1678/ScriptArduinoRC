@@ -51,61 +51,60 @@ void setup() {
 
    モータ値100で2秒間前進
   -------------------------------------------------*/
+String cmd[20];
+//String cmdStr;
+
+int lineNum = 20; // 6Command * 行数
+
 
 void loop() {
   //Serial.available()で取得できるのは最大64byteなので、現状は一度に10命令分までしか実行できない
+  
   if(BT.available() == 0){
     return;
-}
-  String data = BT.readStringUntil('\0');
-  if (data.substring(0, 2) == "ff") {
-    int lineNum = data.substring(2, data.length()).toInt();
-    String BTCommandStr[lineNum];
-    //Serial.print("header" + String(lineNum) + "\n");
-    for (int i = 0; i < lineNum; i++ ) {
-      BTCommandStr[i] = BT.readStringUntil('\0');
-    }
-    //Serial.print(String(BTCommandStr[1])+"\n");
-    // BTCommandStr が行の中身
-    //lineNumが行数
-      
-    struct motorCommand commands[100];
-    int j = 0;
-    for (int i = 0; i < lineNum; i++) {
-      struct motorCommand tmpCommand[6];
-      String str = BTCommandStr[i];
-      checkData(str,tmpCommand);
-        
-      Serial.print(String(tmpCommand[0].orderId)+"\n");
-      //Serial.print(String(BTCommandStr[i])+"\n");
-
-        // TODO 値渡し用に時間稼ぐと動くのでは？ 
-        delay(100);
-        commands[j] = tmpCommand[0];
-        commands[j+1] = tmpCommand[1];
-        commands[j+2] = tmpCommand[2];
-        commands[j+3] = tmpCommand[3];
-        commands[j+4] = tmpCommand[4];
-        commands[j+5] = tmpCommand[5];
-        j = j + 6;
-     }
-
-    for (int i = 0; i < sizeof(commands); i++) {
-      //Serial.print(String(commands[i].orderId)+"\n");
-      motorControl(commands[i]);
-    }
-    sleepMotor();
-
-      //シングル
-    } else {
+  }
+  
+  int i = 0;
+  while (BT.available() != 0){
+    Serial.println("aaaaaaaa");
+    cmd[i] = BT.readStringUntil('\0');
+    Serial.println(cmd[i]);
+    delay(50);
+    i++;
+  }
+  Serial.println("bbbbbbbbbbb");
+    // 送信Commandの0番目にfが無かったら
+    if (cmd[0].indexOf("f") == -1) {
+      Serial.println("cccccccccc");
       struct motorCommand command[6];
-      checkData(data,command);
-      for (int i = 0; i < sizeof(command); i++) {
-        motorControl(command[i]);  
+      checkData(cmd[i],command);
+      for (int j = 0; j < 6; j++){
+        motorControl(command[j]); 
+      }
+      sleepMotor();
+      Serial.println("vvvvvv");
+    
+    } else {
+      for (int k = 1; k < lineNum; k++) {
+        if (cmd[k].length() < 4){
+          break;
+        }
+        Serial.println(cmd[k].length());
+        Serial.println("ddddddddddd");
+        struct motorCommand command[6];
+        checkData(cmd[k],command);
+        for (int j = 0; j < 6; j++){
+          motorControl(command[j]); 
+        }
       }
       sleepMotor();
     }
+    sleepMotor();
 }
+
+
+
+
 
 void checkData(String data, struct motorCommand command[6]) {
   String copyData = data;
@@ -128,10 +127,50 @@ void checkData(String data, struct motorCommand command[6]) {
     command[i].rightSpeed = rightSpeedCode;
     command[i].leftSpeed = leftSpeedCode;
     copyData = copyData.substring(9, copyData.length());
-
-    Serial.print(String(command[i].orderId)+"\n");
   }
 }
+
+
+/*
+void checkData(String data, struct motorCommand command[6]) {
+  String copyData = data;
+  int roopNum = copyData.length() / 9;
+  for (int i = 0; i < roopNum; i++) {
+    //Idの取り出し(1桁)
+    String orderId = copyData.substring(0, 1);
+
+    //Timeの取り出し(2桁)
+    int timeCode = copyData.substring(1, 3).toInt();
+
+    //speedの取り出し 右回転(3桁)
+    int rightSpeedCode = copyData.substring(3, 6).toInt();
+
+    //speedの取り出し 左回転(3桁)
+    int leftSpeedCode = copyData.substring(6, 9).toInt();
+
+    command[i].orderId = orderId;
+    command[i].timeNum = timeCode;
+    command[i].rightSpeed = rightSpeedCode;
+    command[i].leftSpeed = leftSpeedCode;
+    copyData = copyData.substring(9, copyData.length());
+  }
+}
+*/
+
+/*
+void multiBtCommand(String datas[],struct motorCommand command[200]){
+
+  for (int i = 0; i < 100; i++) {
+    if (datas[i] = null){
+        return;
+    }
+    checkData(datas[i],);
+    
+    
+  }
+  
+}
+*/
 
 //TODO モーター出力値の調整
 void motorControl(struct motorCommand command) {

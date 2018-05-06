@@ -57,9 +57,7 @@ String cmd[20];
 int lineNum = 20; // 6Command * 行数
 
 
-void loop() {
-  //Serial.available()で取得できるのは最大64byteなので、現状は一度に10命令分までしか実行できない
-  
+void loop() {  
   if(BT.available() == 0){
     return;
   }
@@ -130,48 +128,6 @@ void checkData(String data, struct motorCommand command[6]) {
   }
 }
 
-
-/*
-void checkData(String data, struct motorCommand command[6]) {
-  String copyData = data;
-  int roopNum = copyData.length() / 9;
-  for (int i = 0; i < roopNum; i++) {
-    //Idの取り出し(1桁)
-    String orderId = copyData.substring(0, 1);
-
-    //Timeの取り出し(2桁)
-    int timeCode = copyData.substring(1, 3).toInt();
-
-    //speedの取り出し 右回転(3桁)
-    int rightSpeedCode = copyData.substring(3, 6).toInt();
-
-    //speedの取り出し 左回転(3桁)
-    int leftSpeedCode = copyData.substring(6, 9).toInt();
-
-    command[i].orderId = orderId;
-    command[i].timeNum = timeCode;
-    command[i].rightSpeed = rightSpeedCode;
-    command[i].leftSpeed = leftSpeedCode;
-    copyData = copyData.substring(9, copyData.length());
-  }
-}
-*/
-
-/*
-void multiBtCommand(String datas[],struct motorCommand command[200]){
-
-  for (int i = 0; i < 100; i++) {
-    if (datas[i] = null){
-        return;
-    }
-    checkData(datas[i],);
-    
-    
-  }
-  
-}
-*/
-
 //TODO モーター出力値の調整
 void motorControl(struct motorCommand command) {
 
@@ -179,9 +135,6 @@ void motorControl(struct motorCommand command) {
   int timeNum = command.timeNum;
   int leftSpeed = command.leftSpeed;
   int rightSpeed = command.rightSpeed;
-
-  //Serial.print(image + "\n" + String(timeNum) + "\n" + String(leftSpeed) + "\n" + String(rightSpeed) + "\n");
-
   timeNum = timeNum * 1000; //単位msに変換
 
   //前進

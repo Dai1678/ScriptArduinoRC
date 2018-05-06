@@ -77,7 +77,7 @@ void loop() {
     if (cmd[0].indexOf("f") == -1) {
       Serial.println("cccccccccc");
       struct motorCommand command[6];
-      checkData(cmd[i],command);
+      checkData(cmd[0],command);
       for (int j = 0; j < 6; j++){
         motorControl(command[j]); 
       }

@@ -1,6 +1,5 @@
 #include <SoftwareSerial.h>
 #include "Arduino.h"
-#include "motorCommand.h"
 #include <stdio.h>
 
 SoftwareSerial BT(10, 11);
@@ -21,6 +20,13 @@ SoftwareSerial BT(10, 11);
 #define MOTOR_FRONT_RIGHT 8
 #define MOTOR_BACK_RIGHT 9
 
+struct motorCommand {
+  String orderId;
+  int timeNum;
+  int rightSpeed;
+  int leftSpeed;
+};
+
 
 void setup() {
   BT.begin(9600);
@@ -38,24 +44,23 @@ void setup() {
 
 /*-------------------------------------------------
    コントローラーから送られてくるデータフォーマット
-   imageId : ラジコンに対する動作命令
+   orderId : ラジコンに対する動作命令
       1 : 前進  2 : 後退  3 : 左回転  4 : 右回転
    Time : 動作命令の実行時間
    Speed : 動作命令のモータパワー値
 
-   例: 102100 (1命令分) (6byte)
+   例: 102100100 (1命令分) (9byte)
 
    1桁目 -> imageId
    2,3桁目 -> Time
-   4,5,6桁目 -> Speed
+   4,5,6桁目 -> Speed (右回転)
+   7,8,9桁目 -> Speed (左回転)
 
    モータ値100で2秒間前進
   -------------------------------------------------*/
+
 String cmd[20];
-//String cmdStr;
-
 int lineNum = 20; // 6Command * 行数
-
 
 void loop() {  
   if(BT.available() == 0){
@@ -64,31 +69,28 @@ void loop() {
   
   int i = 0;
   while (BT.available() != 0){
-    Serial.println("aaaaaaaa");
+    //Serial.println("aaaaaaaa");
     cmd[i] = BT.readStringUntil('\0');
-    Serial.println(cmd[i]);
+    //Serial.println(cmd[i]);
     delay(50);
     i++;
   }
-  Serial.println("bbbbbbbbbbb");
+
     // 送信Commandの0番目にfが無かったら
     if (cmd[0].indexOf("f") == -1) {
-      Serial.println("cccccccccc");
       struct motorCommand command[6];
       checkData(cmd[0],command);
       for (int j = 0; j < 6; j++){
         motorControl(command[j]); 
       }
       sleepMotor();
-      Serial.println("vvvvvv");
-    
+          
     } else {
       for (int k = 1; k < lineNum; k++) {
         if (cmd[k].length() < 4){
           break;
         }
-        Serial.println(cmd[k].length());
-        Serial.println("ddddddddddd");
+        
         struct motorCommand command[6];
         checkData(cmd[k],command);
         for (int j = 0; j < 6; j++){
@@ -99,10 +101,6 @@ void loop() {
     }
     sleepMotor();
 }
-
-
-
-
 
 void checkData(String data, struct motorCommand command[6]) {
   String copyData = data;
@@ -128,7 +126,6 @@ void checkData(String data, struct motorCommand command[6]) {
   }
 }
 
-//TODO モーター出力値の調整
 void motorControl(struct motorCommand command) {
 
   String image = command.orderId;

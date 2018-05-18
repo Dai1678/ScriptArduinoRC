@@ -1,5 +1,5 @@
-# ScriptArduinoRC
-スクリプト組み立て型のArduinoラジコンシステム (Arduino側プログラム)   
+# 00-Atlas-hw（旧ScriptArduinoRC）
+スクリプト組み立て型のArduinoラジコンシステム (Arduino側プログラム)   
 
 コントローラーアプリ側のプログラム : https://github.com/t-robop/ScriptRobotController   
 

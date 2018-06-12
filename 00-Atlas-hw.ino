@@ -83,7 +83,7 @@ void loop() {
       for (int j = 0; j < 6; j++){
         motorControl(command[j]); 
       }
-      sleepMotor();
+      //sleepMotor();
           
     } else {
       for (int k = 1; k < lineNum; k++) {
@@ -97,9 +97,9 @@ void loop() {
           motorControl(command[j]); 
         }
       }
-      sleepMotor();
+      //sleepMotor();
     }
-    sleepMotor();
+    //sleepMotor();
 }
 
 void checkData(String data, struct motorCommand command[6]) {
@@ -150,6 +150,7 @@ void motorControl(struct motorCommand command) {
 
     delay(timeNum);
 
+    sleepMotor();
   }
 
   //後退
@@ -167,6 +168,8 @@ void motorControl(struct motorCommand command) {
     analogWrite(MOTOR_POWER_RIGHT, rightSpeed);
 
     delay(timeNum);
+
+    sleepMotor();
   }
 
   //左回転
@@ -184,6 +187,8 @@ void motorControl(struct motorCommand command) {
     analogWrite(MOTOR_POWER_RIGHT, rightSpeed);
 
     delay(timeNum);
+
+    sleepMotor();
   }
 
   //右回転
@@ -201,6 +206,8 @@ void motorControl(struct motorCommand command) {
     analogWrite(MOTOR_POWER_RIGHT, rightSpeed);
 
     delay(timeNum);
+
+    sleepMotor();
   }
 
   //停止
@@ -214,6 +221,8 @@ void motorControl(struct motorCommand command) {
     digitalWrite(MOTOR_BACK_RIGHT, LOW);
 
     delay(timeNum);
+
+    sleepMotor();
   }
 
 }
@@ -224,5 +233,5 @@ void sleepMotor() {
   digitalWrite(MOTOR_FRONT_RIGHT, LOW);
   digitalWrite(MOTOR_BACK_RIGHT, LOW);
 
-  delay(100);
+  delay(500);
 }

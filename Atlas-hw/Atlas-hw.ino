@@ -132,7 +132,7 @@ void motorControl(struct motorCommand command) {
   int timeNum = command.timeNum;
   int leftSpeed = command.leftSpeed;
   int rightSpeed = command.rightSpeed;
-  timeNum = timeNum * 1000; //単位msに変換
+  timeNum = timeNum * 100; //単位msに変換
 
   //前進
   if (image.equals("1")) {

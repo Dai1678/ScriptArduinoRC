@@ -45,14 +45,14 @@ void setup() {
 /*-------------------------------------------------
    コントローラーから送られてくるデータフォーマット
    orderId : ラジコンに対する動作命令
-      1 : 前進  2 : 後退  3 : 左回転  4 : 右回転
-   Time : 動作命令の実行時間
+      1 : 前進  2 : 後退  3 : 左回転  4 : 右回転 5 : 停止
+   Time : 動作命令の実行時間[s] < 10.0 小数点を除いた二桁
    Speed : 動作命令のモータパワー値
 
-   例: 102100100 (1命令分) (9byte)
+   例: 120100100 (1命令分) (9byte)
 
-   1桁目 -> imageId
-   2,3桁目 -> Time
+   1桁目 -> orderId
+   2,3桁目 -> Time 20 なら 2.0[s]
    4,5,6桁目 -> Speed (右回転)
    7,8,9桁目 -> Speed (左回転)
 
@@ -69,9 +69,8 @@ void loop() {
   
   int i = 0;
   while (BT.available() != 0){
-    //Serial.println("aaaaaaaa");
     cmd[i] = BT.readStringUntil('\0');
-    //Serial.println(cmd[i]);
+    Serial.println(cmd[i]);
     delay(50);
     i++;
   }
@@ -83,7 +82,6 @@ void loop() {
       for (int j = 0; j < 6; j++){
         motorControl(command[j]); 
       }
-      //sleepMotor();
           
     } else {
       for (int k = 1; k < lineNum; k++) {
@@ -97,16 +95,14 @@ void loop() {
           motorControl(command[j]); 
         }
       }
-      //sleepMotor();
     }
-    //sleepMotor();
 }
 
 void checkData(String data, struct motorCommand command[6]) {
   String copyData = data;
   int roopNum = copyData.length() / 9;
   for (int i = 0; i < roopNum; i++) {
-    //Idの取り出し(1桁)
+    //orderIdの取り出し(1桁)
     String orderId = copyData.substring(0, 1);
 
     //Timeの取り出し(2桁)
